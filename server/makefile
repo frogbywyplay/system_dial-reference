@@ -18,7 +18,7 @@ nf_callbacks_lib: nf_callbacks.o
 	$(CC) -Wall -Werror -g nf_callbacks.o -o libnfCallbacks.so --shared
 
 dialserver: nf_callbacks_lib $(OBJS)
-	$(CC) -Wall -Werror -Wl,-rpath,. -g $(OBJS) -ldl -lpthread -lrt -L. -lnfCallbacks -o dialserver
+	$(CC) -Wall -Werror -g $(OBJS) -ldl -lpthread -L. -lnfCallbacks -o dialserver
 
 test:
 	make -C tests
