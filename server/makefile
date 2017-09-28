@@ -22,7 +22,7 @@ dialserver: nf_callbacks_lib $(OBJS)
 
 test:
 	make -C tests
-	./tests/run_tests
+#	./tests/run_tests
 
 clean:
 	rm -f *.o dialserver *.so
