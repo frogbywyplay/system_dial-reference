@@ -6,6 +6,9 @@ CC=$(TARGET)gcc
 OBJS := main.o dial_server.o mongoose.o quick_ssdp.o url_lib.o dial_data.o LinuxInterfaces.o
 HEADERS := $(wildcard *.h)
 
+CFLAGS += $(shell pkg-config --cflags wydbus)
+LDFLAGS += $(shell pkg-config --libs wydbus)
+
 %.c: $(HEADERS)
 
 %.o: %.c $(HEADERS)
@@ -15,7 +18,7 @@ HEADERS := $(wildcard *.h)
 all: dialserver test
 
 dialserver: $(OBJS)
-	$(CC) -Wall -Werror -g $(OBJS) -ldl -lpthread -o dialserver
+	$(CC) -Wall -Werror -g $(OBJS) -ldl -lpthread $(LDFLAGS) -o dialserver
 
 test:
 	make -C tests
