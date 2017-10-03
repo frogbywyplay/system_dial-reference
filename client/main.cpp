@@ -216,15 +216,10 @@ int handleUser(DialDiscovery *pDial) {
         int processInput = 1;        
         while(processInput){
             string responseHeaders, responseBody, payload;
-            string netflix = "Netflix";
             string youtube = "YouTube";
             
             memset(buf, 0, 80);
             printf("0. Rescan and list DIAL servers\n");
-            printf("1. Launch Netflix\n");
-            printf("2. Hide Netflix\n");
-            printf("3. Stop Netflix\n");
-            printf("4. Netflix status\n");
             printf("5. Launch YouTube\n");
             printf("6. Hide YouTube\n");
             printf("7. Stop YouTube\n");
@@ -232,7 +227,7 @@ int handleUser(DialDiscovery *pDial) {
             printf("9. Run conformance tests\n");
             printf("10. Wake up on lan/wlan\n");
             printf("11. QUIT\n");
-            printf("Command (0:1:2:3:4:5:6:7:8:9:10:11): ");
+            printf("Command (0:5:6:7:8:9:10:11): ");
             scanf("%s", buf);
             switch( atoi(buf) )
                 {
@@ -241,23 +236,6 @@ int handleUser(DialDiscovery *pDial) {
                         pDial->send_mcast();
                         processInput=0;
                     }break;
-                case 1:
-                    printf("Launch Netflix\n");
-                    pServer->launchApplication( netflix, payload, responseHeaders, responseBody );
-                    break;
-                case 2:
-                    printf("Hide Netflix\n");
-                    pServer->hideApplication( netflix, responseHeaders, responseBody );
-                    break;
-                case 3:
-                    printf("Stop Netflix\n");
-                    pServer->stopApplication( netflix, responseHeaders );
-                    break;
-                case 4:
-                    printf("Netflix Status: \n");
-                    pServer->getStatus( netflix, responseHeaders, responseBody );
-                    printf("RESPONSE: \n%s\n", responseBody.c_str());
-                    break;
                 case 5:
                     printf("Launch YouTube\n");
                     pServer->launchApplication( youtube, payload, responseHeaders, responseBody );

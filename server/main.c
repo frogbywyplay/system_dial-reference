@@ -271,14 +271,8 @@ void runDial(void)
 {
     DIALServer *ds;
     ds = DIAL_create();
-    struct DIALAppCallbacks cb_nf;
-    cb_nf.start_cb = netflix_start;
-    cb_nf.hide_cb = netflix_hide;
-    cb_nf.stop_cb = netflix_stop;
-    cb_nf.status_cb = netflix_status;
     struct DIALAppCallbacks cb_yt = {youtube_start, youtube_hide, youtube_stop, youtube_status};
 
-    DIAL_register_app(ds, "Netflix", &cb_nf, NULL, 1, ".netflix.com");
     DIAL_register_app(ds, "YouTube", &cb_yt, NULL, 1, ".youtube.com");
     DIAL_start(ds);
 
@@ -338,8 +332,6 @@ int main(int argc, char* argv[])
 
     srand(time(NULL));
     int i;
-    i = isAppRunning(spAppNetflix, NULL );
-    printf("Netflix is %s\n", i ? "Running":"Not Running");
     i = isAppRunning( spAppYouTube, spAppYouTubeMatch );
     printf("YouTube is %s\n", i ? "Running":"Not Running");
 

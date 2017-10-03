@@ -14,11 +14,8 @@ HEADERS := $(wildcard *.h)
 
 all: dialserver test
 
-nf_callbacks_lib: nf_callbacks.o
-	$(CC) -Wall -Werror -g nf_callbacks.o -o libnfCallbacks.so --shared
-
-dialserver: nf_callbacks_lib $(OBJS)
-	$(CC) -Wall -Werror -g $(OBJS) -ldl -lpthread -L. -lnfCallbacks -o dialserver
+dialserver: $(OBJS)
+	$(CC) -Wall -Werror -g $(OBJS) -ldl -lpthread -o dialserver
 
 test:
 	make -C tests
