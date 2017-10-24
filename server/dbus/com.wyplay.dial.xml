@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    @WYPLAY_COPYRIGHT_START@
+    Copyright (C) 2017 Wyplay, All Rights Reserved.
+    This source code and any compilation or derivative thereof is the
+    proprietary information of Wyplay and is confidential in nature.
+    Under no circumstances is this software to be exposed to or placed under
+    an Open Source License of any type without the expressed written permission
+    of Wyplay.
+    @WYPLAY_COPYRIGHT_END@
+-->
+<spec name="dial" prefix="com.wyplay" xmlns="http://schemas.wyplay.com/dbus/1.0/">
+    <rationale>
+        D-Bus interfaces for the DIAL server.
+    </rationale>
+    <description>
+        Only one D-Bus interfaces are exposed:
+        - dial
+    </description>
+
+    <interface name="notify">
+        <description>
+            Notify when an application is requested by a second screen device (usually a smartphone or tablet) through the DIAL protocol.
+            The actual launch of the application is at the discretion of the main user interface.
+        </description>
+
+        <signal name="start_requested">
+            <description>
+                Notify when an application shall be started.
+                Ressources shall be closed/freed by the main user interface before starting the requested application.
+            </description>
+            <arg name="name" type="s">
+                <description>name of the application to start.</description>
+            </arg>
+            <arg name="payload" type="s">
+                <description>payload for the application to be used at launch.</description>
+            </arg>
+            <arg name="additional_data_url" type="s">
+                <description>additional datas for the application to be used at launch.</description>
+            </arg>
+        </signal>
+
+        <signal name="stop_requested">
+            <description>
+                Notify when an application shall be stopped.
+            </description>
+            <arg name="name" type="s">
+                <description>Name of the application to start</description>
+            </arg>
+        </signal>
+    </interface>
+
+</spec>

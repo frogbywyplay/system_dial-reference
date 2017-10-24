@@ -42,58 +42,9 @@
 
 #include "url_lib.h"
 #include "nf_callbacks.h"
+#include "custom_callbacks.h"
 
 #define BUFSIZE 256
-
-#include <wydbus.h>
-#include <glib.h>
-#define DBUS_SRV_NAME "com.wyplay.wlauncher"
-#define DBUS_OBJ_PATH "/com/wyplay/wlauncher/browser"
-#define DBUS_IFACE_NAME "com.wyplay.wlauncher.browser"
-
-typedef struct {
-    wydbus_t *bus;
-    wydbus_ref_t *ref_browser;
-    struct {
-        void (*load_url) (char *);
-        char * (*get_url) (void);
-
-        int (*open_layer) (int, bool, GArray*);
-        void (*close_layer) (int);
-        void (*set_layer_url) (int, char*);
-    } api;
-
-    int active_layer;
-} ctx_t;
-
-ctx_t dbus_ctx;
-
-int init_dbus(void)
-{
-    dbus_ctx.bus = wydbus_new(DBUS_BUS_SYSTEM, "");
-    dbus_ctx.ref_browser = wydbus_reference2(dbus_ctx.bus, DBUS_SRV_NAME, DBUS_OBJ_PATH, DBUS_IFACE_NAME);
-
-    dbus_ctx.api.load_url = wydbus_method(dbus_ctx.ref_browser, "load_url", "s", "", NULL);
-    dbus_ctx.api.get_url = wydbus_method(dbus_ctx.ref_browser, "get_url", "", "s", NULL);
-
-    dbus_ctx.api.open_layer = wydbus_method(dbus_ctx.ref_browser, "open_layer", "ibas", "i", NULL);
-    dbus_ctx.api.close_layer = wydbus_method(dbus_ctx.ref_browser, "close_layer", "i", "", NULL);
-    dbus_ctx.api.set_layer_url = wydbus_method(dbus_ctx.ref_browser, "set_layer_url", "is", "", NULL);
-
-    dbus_ctx.active_layer = -1;
-    wydbus_run(dbus_ctx.bus);
-    return 0;
-}
-
-void free_dbus(void)
-{
-    wydbus_exit(dbus_ctx.bus);
-    wydbus_free_proxy(dbus_ctx.api.open_layer);
-    wydbus_free_proxy(dbus_ctx.api.close_layer);
-    wydbus_free_proxy(dbus_ctx.api.set_layer_url);
-    wydbus_free_reference(dbus_ctx.ref_browser);
-    wydbus_free(dbus_ctx.bus);
-}
 
 char *spAppNetflix = "netflix";      // name of the netflix executable
 static char *spDefaultNetflix = "../../../src/platform/qt/netflix";
@@ -109,12 +60,6 @@ static char spModelName[BUFSIZE];
 static char spUuid[BUFSIZE];
 extern bool wakeOnWifiLan;
 static int gDialPort;
-
-static char *spAppYouTube = "https://www.youtube.com/";
-static char *spAppYouTubeMatch = "chrome.*google-chrome-dial";
-static int spAppYouTubeZOrder = 80;
-
-static char *spDefaultApp = "file:///usr/share/webapps/transparent-body/index.html";
 
 int doesMatch( char* pzExp, char* pzStr)
 {
@@ -143,21 +88,6 @@ void signalHandler(int signal)
             // just ignore this, we don't want to die
             break;
     }
-}
-
-/*
- * This function will walk /proc and look for the application in
- * /proc/<PID>/comm. and /proc/<PID>/cmdline to find it's command (executable
- * name) and command line (if needed).
- * Implementors can override this function with an equivalent.
- */
-int isAppRunning( char *pzName, char *pzCommandPattern ) {
-    char *current_url = NULL;
-    if (strncmp(pzName, spAppYouTube, strlen(spAppYouTube)) == 0) {
-        current_url = dbus_ctx.api.get_url();
-        return !strncmp(current_url, spAppYouTube, strlen(spAppYouTube));
-    }
-    return 0;
 }
 
 pid_t runApplication( const char * const args[], DIAL_run_t *run_id ) {
@@ -195,69 +125,6 @@ int shouldRelaunch(
     return ( strncmp( DIAL_get_payload(pServer, pAppName), args, DIAL_MAX_PAYLOAD ) != 0 );
 }
 
-static DIALStatus youtube_start(DIALServer *ds, const char *appname,
-                                const char *payload, const char *additionalDataUrl,
-                                DIAL_run_t *run_id, void *callback_data) {
-    printf("\n\n ** LAUNCH YouTube ** with\n - payload: '%s'\n - additionalDataUrl: '%s'\n\n", payload, additionalDataUrl);
-
-    char url[512] = {0,};
-    if (strlen(payload) && strlen(additionalDataUrl)){
-        sprintf( url, "https://www.youtube.com/tv?%s&%s", payload, additionalDataUrl);
-    }else if (strlen(payload)){
-        sprintf( url, "https://www.youtube.com/tv?%s", payload);
-    }else{
-        sprintf( url, "https://www.youtube.com/tv");
-    }
-
-    int layer_id = -1;
-    GArray *forward_keys = g_array_new(FALSE, TRUE, sizeof(char*));
-    char *key = g_strdup("f4"); /* standby */
-    g_array_append_val(forward_keys, key);
-
-    /* layer API
-    if (dbus_ctx.active_layer < 0) {
-        layer_id = dbus_ctx.api.open_layer(spAppYouTubeZOrder, true, forward_keys);
-    }
-    else {
-        layer_id = dbus_ctx.active_layer;
-    }
-
-    dbus_ctx.api.set_layer_url(layer_id, url);
-    dbus_ctx.active_layer = layer_id;
-    */
-    dbus_ctx.api.load_url(url);
-
-    g_array_free(forward_keys, TRUE);
-    g_free(key);
-
-    return kDIALStatusRunning;
-}
-
-static DIALStatus youtube_hide(DIALServer *ds, const char *app_name,
-                                        DIAL_run_t *run_id, void *callback_data)
-{
-    return (isAppRunning( spAppYouTube, spAppYouTubeMatch )) ? kDIALStatusRunning : kDIALStatusStopped;
-}
-        
-static DIALStatus youtube_status(DIALServer *ds, const char *appname,
-                                 DIAL_run_t run_id, int *pCanStop, void *callback_data) {
-    // YouTube can stop
-    *pCanStop = 1;
-    return isAppRunning( spAppYouTube, spAppYouTubeMatch ) ? kDIALStatusRunning : kDIALStatusStopped;
-}
-
-static void youtube_stop(DIALServer *ds, const char *appname, DIAL_run_t run_id,
-                         void *callback_data) {
-    printf("\n\n ** KILL YouTube **\n\n");
-    if ((isAppRunning( spAppYouTube, spAppYouTubeMatch ))) {
-        /* layer API
-        dbus_ctx.api.close_layer(dbus_ctx.active_layer);
-        dbus_ctx.active_layer = -1;
-        */
-        dbus_ctx.api.load_url(spDefaultApp);
-    }
-}
-
 void run_ssdp(int port, const char *pFriendlyName, const char * pModelName, const char *pUuid);
 
 static void printUsage()
@@ -291,7 +158,7 @@ void runDial(void)
 {
     DIALServer *ds;
     ds = DIAL_create();
-    struct DIALAppCallbacks cb_yt = {youtube_start, youtube_hide, youtube_stop, youtube_status};
+    struct DIALAppCallbacks cb_yt = {&youtube_start, &youtube_hide, &youtube_stop, &youtube_status};
 
     DIAL_register_app(ds, "YouTube", &cb_yt, NULL, 1, ".youtube.com");
     DIAL_start(ds);
